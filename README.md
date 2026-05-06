@@ -305,6 +305,13 @@ EOF
 bun run build:compile
 ```
 
+On macOS, `cp` strips the binary's adhoc codesignature and the OS will SIGKILL it on launch. After installing a locally-built binary, re-sign it:
+
+```bash
+cp cmux-hub ~/.local/bin/cmux-hub
+codesign --force --sign - ~/.local/bin/cmux-hub
+```
+
 ```bash
 bun test          # Run tests
 bun run lint      # Lint
