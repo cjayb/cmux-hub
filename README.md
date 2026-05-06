@@ -312,6 +312,32 @@ cp cmux-hub ~/.local/bin/cmux-hub
 codesign --force --sign - ~/.local/bin/cmux-hub
 ```
 
+When running a local build (without installing via the plugin marketplace), the plugin's skills are not auto-discovered by Claude Code. To make the `start` skill available — so Claude can re-launch cmux-hub if you close the browser pane during a session — copy it into `~/.claude/skills/`, substituting `${CLAUDE_PLUGIN_ROOT}` with the absolute path to the local `cmux-hub-plugin` directory:
+
+```bash
+mkdir -p ~/.claude/skills/cmux-hub-start
+sed "s|\${CLAUDE_PLUGIN_ROOT}|$(pwd)/cmux-hub-plugin|g" \
+  cmux-hub-plugin/skills/start/SKILL.md \
+  > ~/.claude/skills/cmux-hub-start/SKILL.md
+```
+
+Re-run that one-liner if the upstream `SKILL.md` changes. None of this is necessary when installing via `claude plugin install cmux-hub@cmux-hub-marketplace` — the plugin runtime handles binary install, hook registration, skill discovery, and `${CLAUDE_PLUGIN_ROOT}` resolution.
+
+The `start` skill calls `ensure-cmux-hub.sh`, which compares the current binary version against `cmux-hub-plugin/.claude-plugin/plugin.json` and downloads a matching release from GitHub if they differ. As long as you keep `plugin.json`'s version in sync with your locally-built binary, this is a no-op. If you bump the version locally to test an unreleased build, the download will 404 and the skill will fail — either revert the version bump or remove the `ensure-cmux-hub.sh` invocation from your local copy of the skill.
+
+To undo a local-build install before switching to the plugin marketplace install:
+
+```bash
+# Remove the locally-built binary (plugin will manage its own copy)
+rm -f ~/.local/bin/cmux-hub
+
+# Remove the copied skill
+rm -rf ~/.claude/skills/cmux-hub-start
+
+# Remove the SessionStart entry pointing at this fork's start.sh from
+# ~/.claude/settings.json (edit by hand, or use `jq`)
+```
+
 ```bash
 bun test          # Run tests
 bun run lint      # Lint
