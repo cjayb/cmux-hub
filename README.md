@@ -321,7 +321,7 @@ sed "s|\${CLAUDE_PLUGIN_ROOT}|$(pwd)/cmux-hub-plugin|g" \
   > ~/.claude/skills/cmux-hub-start/SKILL.md
 ```
 
-Re-run that one-liner if the upstream `SKILL.md` changes. None of this is necessary when installing via `claude plugin install cmux-hub@cmux-hub-marketplace` — the plugin runtime handles binary install, hook registration, skill discovery, and `${CLAUDE_PLUGIN_ROOT}` resolution.
+Re-run that one-liner if the upstream `SKILL.md` changes. Note that it overwrites `~/.claude/skills/cmux-hub-start/SKILL.md` — any manual edits there (e.g. removing the `ensure-cmux-hub.sh` call to protect a local build) will be lost. Re-apply them after re-syncing. None of this is necessary when installing via `claude plugin install cmux-hub@cmux-hub-marketplace` — the plugin runtime handles binary install, hook registration, skill discovery, and `${CLAUDE_PLUGIN_ROOT}` resolution.
 
 The `start` skill calls `ensure-cmux-hub.sh`, which compares the current binary version against `cmux-hub-plugin/.claude-plugin/plugin.json` and downloads a matching release from GitHub if they differ. As long as you keep `plugin.json`'s version in sync with your locally-built binary, this is a no-op. If you bump the version locally to test an unreleased build, the download will 404 and the skill will fail — either revert the version bump or remove the `ensure-cmux-hub.sh` invocation from your local copy of the skill.
 
