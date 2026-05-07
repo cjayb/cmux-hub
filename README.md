@@ -305,11 +305,20 @@ EOF
 bun run build:compile
 ```
 
-On macOS, `cp` strips the binary's adhoc codesignature and the OS will SIGKILL it on launch. After installing a locally-built binary, re-sign it:
+For a local-build install (compile, copy, codesign, and emit a restart helper) run:
 
 ```bash
+bun run install:local
+```
+
+This builds the binary, installs it at `~/.local/bin/cmux-hub`, re-signs it on macOS (`cp` strips the adhoc codesignature and the OS would SIGKILL it on launch otherwise), and writes `~/.local/bin/cmux-hub-restart` — a standalone helper that starts cmux-hub for the current working directory. Type `!cmux-hub-restart` in a Claude Code prompt to launch a fresh hub without an LLM round-trip; the helper picks `.claude/cmux-hub.json`, `~/.claude/cmux-hub.json`, or the bundled defaults in that order, and logs to `${XDG_STATE_HOME:-~/.local/state}/cmux-hub/`. Re-run `bun run install:local` after pulling or rebuilding to keep the helper in sync with the binary.
+
+To do the steps manually instead:
+
+```bash
+bun run build:compile
 cp cmux-hub ~/.local/bin/cmux-hub
-codesign --force --sign - ~/.local/bin/cmux-hub
+codesign --force --sign - ~/.local/bin/cmux-hub   # macOS only
 ```
 
 When running a local build (without installing via the plugin marketplace), the plugin's skills are not auto-discovered by Claude Code. To make the `start` skill available — so Claude can re-launch cmux-hub if you close the browser pane during a session — copy it into `~/.claude/skills/`, substituting `${CLAUDE_PLUGIN_ROOT}` with the absolute path to the local `cmux-hub-plugin` directory:
@@ -328,8 +337,8 @@ The `start` skill calls `ensure-cmux-hub.sh`, which compares the current binary 
 To undo a local-build install before switching to the plugin marketplace install:
 
 ```bash
-# Remove the locally-built binary (plugin will manage its own copy)
-rm -f ~/.local/bin/cmux-hub
+# Remove the locally-built binary and restart helper (plugin will manage its own copy)
+rm -f ~/.local/bin/cmux-hub ~/.local/bin/cmux-hub-restart
 
 # Remove the copied skill
 rm -rf ~/.claude/skills/cmux-hub-start

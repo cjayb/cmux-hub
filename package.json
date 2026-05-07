@@ -11,6 +11,7 @@
     "start": "NODE_ENV=production bun src/index.ts",
     "build": "bun run build.ts",
     "build:compile": "bun run build-compile.ts",
+    "install:local": "bash scripts/install-local.sh",
     "test": "bun test src server",
     "lint": "oxlint .",
     "fmt": "oxfmt --write .",
