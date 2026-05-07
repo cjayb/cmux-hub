@@ -499,7 +499,11 @@ if (isDev) {
       appDeps.browserSurfaceId = browserSurface;
       waitForBrowserClose(browserSurface);
     } else {
-      logger.info("cmux browser split not available, open http://127.0.0.1:" + server.port);
+      // Without a browser surface there's no way to know when to exit, so the
+      // server would linger forever as a zombie. The dev entry point is the
+      // right tool for headless use; the binary is cmux-bound by design.
+      logger.info("cmux browser split not available, exiting");
+      await cleanup();
     }
   }
 }
