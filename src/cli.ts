@@ -375,6 +375,10 @@ if (isDev) {
 // Cleanup on termination signals (e.g. SIGHUP from parent shell exit)
 async function cleanup() {
   logger.info("cmux-hub: shutting down...");
+  if (g.__cmuxHubParentWatch) {
+    clearInterval(g.__cmuxHubParentWatch as ReturnType<typeof setInterval>);
+    g.__cmuxHubParentWatch = undefined;
+  }
   // AsyncDisposable — single path for all shutdown scenarios
   await launcher?.[Symbol.asyncDispose]();
   watcher.stop();
@@ -400,6 +404,22 @@ g.__cmuxHubCleanup = cleanup;
 process.on("SIGHUP", cleanup);
 process.on("SIGINT", cleanup);
 process.on("SIGTERM", cleanup);
+
+// Parent-death watch: macOS doesn't deliver SIGHUP when an arbitrary parent
+// exits, so children get silently reparented to launchd (PID 1) and linger.
+// Detect that by polling ppid and exit if it changes from the original.
+if (g.__cmuxHubParentWatch) {
+  clearInterval(g.__cmuxHubParentWatch as ReturnType<typeof setInterval>);
+}
+const initialPpid = process.ppid;
+if (initialPpid > 1) {
+  g.__cmuxHubParentWatch = setInterval(() => {
+    if (process.ppid !== initialPpid) {
+      logger.info(`cmux-hub: parent ${initialPpid} exited (now ${process.ppid}), shutting down`);
+      void cleanup();
+    }
+  }, 60_000);
+}
 
 logger.info(`Server running at http://127.0.0.1:${server.port}`);
 logger.info(`Watching: ${CWD}`);
